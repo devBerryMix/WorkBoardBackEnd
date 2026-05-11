@@ -2,91 +2,89 @@ const express = require('express');
 const router = express.Router();
 const { mockLeaveRequests } = require('../data/leaves');
 const { mockUsers } = require('../data/users');
+const { resolveRequester } = require('../middleware/requester');
 
 let leaves = JSON.parse(JSON.stringify(mockLeaveRequests));
 let nextId = Math.max(...leaves.map((l) => parseInt(l.id))) + 1;
 
-// GET /api/leaves
-router.get('/', (req, res) => {
-  return res.json(leaves);
+function deptUserIds(departmentId) {
+  return new Set(mockUsers.filter((u) => u.departmentId === departmentId).map((u) => u.id));
+}
+
+// GET /api/leaves?requesterId=1
+router.get('/', resolveRequester, (req, res) => {
+  const allowed = deptUserIds(req.requester.departmentId);
+  return res.json(leaves.filter((l) => allowed.has(l.userId)));
 });
 
-// GET /api/leaves/user/:userId
-router.get('/user/:userId', (req, res) => {
-  const { userId } = req.params;
+// GET /api/leaves/user/:userId?requesterId=1  (본인 데이터만 허용)
+router.get('/user/:userId', resolveRequester, (req, res) => {
+  if (req.params.userId !== req.requester.id) {
+    return res.status(403).json({ error: 'Access denied: you can only view your own leaves' });
+  }
 
-  const userLeaves = leaves.filter((l) => l.userId === userId);
-
-  return res.json(userLeaves);
+  return res.json(leaves.filter((l) => l.userId === req.params.userId));
 });
 
-// GET /api/leaves/month/:year/:month - Get leaves for a specific month (for calendar view)
-router.get('/month/:year/:month', (req, res) => {
+// GET /api/leaves/month/:year/:month?requesterId=1
+router.get('/month/:year/:month', resolveRequester, (req, res) => {
   const { year, month } = req.params;
   const monthStr = String(month).padStart(2, '0');
   const yearMonth = `${year}-${monthStr}`;
+  const allowed = deptUserIds(req.requester.departmentId);
 
   const monthLeaves = leaves.filter(
     (l) =>
       l.status === 'approved' &&
+      allowed.has(l.userId) &&
       ((l.startDate.startsWith(yearMonth) && l.startDate <= `${yearMonth}-31`) ||
         (l.endDate.startsWith(yearMonth) && l.endDate >= `${yearMonth}-01`))
   );
 
-  const teamLeaveMembers = {};
+  const result = {};
 
   monthLeaves.forEach((leave) => {
     const user = mockUsers.find((u) => u.id === leave.userId);
-    if (user) {
-      if (!teamLeaveMembers[leave.startDate]) {
-        teamLeaveMembers[leave.startDate] = [];
-      }
-      if (!teamLeaveMembers[leave.startDate].find((m) => m.userId === user.id)) {
-        teamLeaveMembers[leave.startDate].push({
-          userId: user.id,
-          name: user.name,
-          department: user.department,
-        });
-      }
+    if (!user) return;
 
-      if (leave.startDate !== leave.endDate) {
-        const start = new Date(leave.startDate);
-        const end = new Date(leave.endDate);
-        const current = new Date(start);
+    const addToDate = (dateStr) => {
+      if (!dateStr.startsWith(yearMonth)) return;
+      if (!result[dateStr]) result[dateStr] = [];
+      if (!result[dateStr].find((m) => m.userId === user.id)) {
+        result[dateStr].push({ userId: user.id, name: user.name, department: user.department });
+      }
+    };
 
-        while (current < end) {
-          current.setDate(current.getDate() + 1);
-          const dateStr = current.toISOString().split('T')[0];
-          if (dateStr.startsWith(yearMonth)) {
-            if (!teamLeaveMembers[dateStr]) {
-              teamLeaveMembers[dateStr] = [];
-            }
-            if (!teamLeaveMembers[dateStr].find((m) => m.userId === user.id)) {
-              teamLeaveMembers[dateStr].push({
-                userId: user.id,
-                name: user.name,
-                department: user.department,
-              });
-            }
-          }
-        }
+    addToDate(leave.startDate);
+
+    if (leave.startDate !== leave.endDate) {
+      const current = new Date(leave.startDate);
+      const end = new Date(leave.endDate);
+      while (current < end) {
+        current.setDate(current.getDate() + 1);
+        addToDate(current.toISOString().split('T')[0]);
       }
     }
   });
 
-  return res.json(teamLeaveMembers);
+  return res.json(result);
 });
 
-// POST /api/leaves - Create a new leave request
-router.post('/', (req, res) => {
+// POST /api/leaves
+// Body: { requesterId, userId, startDate, endDate, reason }
+router.post('/', resolveRequester, (req, res) => {
   const { userId, startDate, endDate, reason } = req.body;
 
   if (!userId || !startDate || !endDate || !reason) {
     return res.status(400).json({ error: 'userId, startDate, endDate, and reason are required' });
   }
 
-  const user = mockUsers.find((u) => u.id === userId);
-  if (!user) {
+  if (userId !== req.requester.id) {
+    return res.status(403).json({ error: 'Access denied: you can only submit leaves for yourself' });
+  }
+
+  const target = mockUsers.find((u) => u.id === userId);
+  if (!target) {
     return res.status(404).json({ error: 'User not found' });
   }
 

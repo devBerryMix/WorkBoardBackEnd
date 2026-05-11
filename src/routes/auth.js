@@ -31,6 +31,8 @@ router.post('/login', (req, res) => {
       id: user.id,
       email: user.email,
       name: user.name,
+      group: user.group,
+      departmentId: user.departmentId,
       department: user.department,
       position: user.position,
       employeeNo: user.employeeNo,
