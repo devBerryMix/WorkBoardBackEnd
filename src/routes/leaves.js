@@ -26,12 +26,13 @@ router.get('/user/:userId', resolveRequester, (req, res) => {
   return res.json(leaves.filter((l) => l.userId === req.params.userId));
 });
 
-// GET /api/leaves/month/:year/:month?requesterId=1
+// GET /api/leaves/month/:year/:month?requesterId=1&targetDepartmentId=D002
 router.get('/month/:year/:month', resolveRequester, (req, res) => {
   const { year, month } = req.params;
   const monthStr = String(month).padStart(2, '0');
   const yearMonth = `${year}-${monthStr}`;
-  const allowed = deptUserIds(req.requester.departmentId);
+  const targetDeptId = req.query.targetDepartmentId || req.requester.departmentId;
+  const allowed = deptUserIds(targetDeptId);
 
   const monthLeaves = leaves.filter(
     (l) =>

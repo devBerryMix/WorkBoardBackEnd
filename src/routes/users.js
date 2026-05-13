@@ -27,6 +27,14 @@ router.get('/', resolveRequester, (req, res) => {
   return res.json(sameDeptUsers);
 });
 
+// GET /api/users/department/:departmentId?requesterId=1
+router.get('/department/:departmentId', resolveRequester, (req, res) => {
+  const users = mockUsers
+    .filter((u) => u.departmentId === req.params.departmentId)
+    .map(formatUser);
+  return res.json(users);
+});
+
 // GET /api/users/:userId?requesterId=1
 router.get('/:userId', resolveRequester, (req, res) => {
   const target = mockUsers.find((u) => u.id === req.params.userId);
