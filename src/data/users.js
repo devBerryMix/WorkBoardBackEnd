@@ -5,7 +5,7 @@ const mockUsers = [
   { id: '3',  employeeNo: '2023003', name: '이서준', group: '경영지원그룹',       departmentId: 'D001', department: 'IT팀',           position: 'L1', email: 'seojun.lee@workboard.com',    totalLeaves: 15, usedLeaves: 2  },
   { id: '4',  employeeNo: '2022004', name: '박지훈', group: '경영지원그룹',       departmentId: 'D001', department: 'IT팀',           position: 'L2', email: 'jihun.park@workboard.com',    totalLeaves: 15, usedLeaves: 7  },
   { id: '5',  employeeNo: '2024005', name: '최도윤', group: '경영지원그룹',       departmentId: 'D001', department: 'IT팀',           position: 'L1', email: 'doyun.choi@workboard.com',    totalLeaves: 15, usedLeaves: 4  },
-  { id: '6',  employeeNo: '2018006', name: '정하준', group: '경영지원그룹',       departmentId: 'D001', department: 'IT팀',           position: 'L4', email: 'hajun.j@workboard.com',       totalLeaves: 16, usedLeaves: 6  },
+  { id: '6',  employeeNo: '2018006', name: '김봉균', group: '경영지원그룹',       departmentId: 'D001', department: 'IT팀',           position: 'L4', email: 'goodman@workboard.com',       totalLeaves: 16, usedLeaves: 6  },
   { id: '7',  employeeNo: '2019007', name: '강민서', group: '경영지원그룹',       departmentId: 'D001', department: 'IT팀',           position: 'L3', email: 'minseo.kang@workboard.com',   totalLeaves: 15, usedLeaves: 1  },
   { id: '8',  employeeNo: '2021008', name: '윤서연', group: '경영지원그룹',       departmentId: 'D001', department: 'IT팀',           position: 'L2', email: 'seoyeon.yoon@workboard.com',  totalLeaves: 15, usedLeaves: 8  },
   { id: '9',  employeeNo: '2023009', name: '장예준', group: '경영지원그룹',       departmentId: 'D001', department: 'IT팀',           position: 'L1', email: 'yejun.jang@workboard.com',    totalLeaves: 17, usedLeaves: 5  },
