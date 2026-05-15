@@ -71,6 +71,42 @@ router.get('/month/:year/:month', resolveRequester, (req, res) => {
   return res.json(result);
 });
 
+// GET /api/leaves/pending?requesterId=6  (L4 only — same department)
+router.get('/pending', resolveRequester, (req, res) => {
+  if (req.requester.position !== 'L4') {
+    return res.status(403).json({ error: 'Access denied: only L4 can view pending leaves' });
+  }
+  const allowed = deptUserIds(req.requester.departmentId);
+  return res.json(leaves.filter((l) => l.status === 'pending' && allowed.has(l.userId)));
+});
+
+// PATCH /api/leaves/:id/status  (L4 only — same department)
+// Body: { status: 'approved' | 'rejected', requesterId }
+router.patch('/:id/status', resolveRequester, (req, res) => {
+  const { status } = req.body;
+
+  if (!status || !['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: 'status must be "approved" or "rejected"' });
+  }
+
+  if (req.requester.position !== 'L4') {
+    return res.status(403).json({ error: 'Access denied: only L4 can approve/reject leaves' });
+  }
+
+  const idx = leaves.findIndex((l) => l.id === req.params.id);
+  if (idx === -1) {
+    return res.status(404).json({ error: 'Leave request not found' });
+  }
+
+  const allowed = deptUserIds(req.requester.departmentId);
+  if (!allowed.has(leaves[idx].userId)) {
+    return res.status(403).json({ error: 'Access denied: different department' });
+  }
+
+  leaves[idx] = { ...leaves[idx], status };
+  return res.json(leaves[idx]);
+});
+
 // POST /api/leaves
 // Body: { requesterId, userId, startDate, endDate, reason }
 router.post('/', resolveRequester, (req, res) => {
