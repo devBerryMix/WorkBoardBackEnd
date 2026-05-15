@@ -1,9 +1,12 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const leavesRoutes = require('./routes/leaves');
+const { initPool, closePool } = require('./db/connection');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,6 +26,21 @@ app.get('/health', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`WorkBoard API server is running on http://localhost:${PORT}`);
+async function start() {
+  try {
+    await initPool();
+  } catch (err) {
+    console.warn('Oracle DB connection failed — running with mock data:', err.message);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`WorkBoard API server is running on http://localhost:${PORT}`);
+  });
+}
+
+process.on('SIGINT', async () => {
+  await closePool();
+  process.exit(0);
 });
+
+start();
