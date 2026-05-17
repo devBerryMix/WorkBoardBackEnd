@@ -1,4 +1,4 @@
-const oracledb = require('node-oracledb');
+const oracledb = require('oracledb');
 
 let pool = null;
 
